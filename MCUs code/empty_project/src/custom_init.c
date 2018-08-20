@@ -84,12 +84,18 @@ void CustomGPIOConfig(void){
 	//  --------- Clock for GPIO port C (APB2) -----------
 	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
 
-	//  --------- Pin mode - both bits cleared - input mode -----------
+	//  --------- PC13 Pin mode - both bits cleared - input mode -----------
 	GPIOC->CRH &= ~GPIO_CRH_MODE13;
+	//  --------- PC0 Pin mode - both bits set - output mode 50MHz -----------
+	GPIOC->CRH |= GPIO_CRL_MODE0;
 
-	//  -------------- Pin config - 01 - floating input ---------------
+	//  -------------- PC13 Pin config - 01 - floating input ---------------
 	GPIOC->CRH &= ~GPIO_CRH_CNF13;
 	GPIOC->CRH |= GPIO_CRH_CNF13_0;
+	//  -------------- PC0 Pin config - 00 - push-pull output ---------------
+	GPIOC->CRH &= ~GPIO_CRL_CNF0;
+	//  ------------- Immidiately set to high -----------------
+	GPIOC->BSRR |= GPIO_BSRR_BS0;
 
 	//  -------------------------------------------------------------
 	//  ---------------- AFIO for interrupt config ------------------
