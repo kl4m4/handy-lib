@@ -31,8 +31,13 @@ SOFTWARE.
 #include <stddef.h>
 #include "stm32f10x.h"
 #include "custom_init.h"
+#include "ledblinker\ledblinker.h"
 
 static int i=0;
+void LEDSwitchON();
+void LEDSwitchOFF();
+sLEDInstance myled;
+static int req=0;
 
 int main(void)
 {
@@ -40,15 +45,47 @@ int main(void)
 
   /* TODO - Add your application code here */
 
+	LEDInstanceInit(&myled, &LEDSwitchON, &LEDSwitchOFF);
+	LEDInstanceSetOFF(&myled);
 
   /* Infinite loop */
-  while (1)
-  {
-	  i++;
-	  if(i>20000){
-		  i=0;
-	  }
-  }
+	while (1)
+	{
+		// some dummy code...
+		i++;
+		if(i>20000){
+			i=0;
+		}
+	}
+}
+
+/**
+  * @brief  This is function for switching ON the LED on Nucleo board
+  * @param  None
+  * @retval None
+  */
+void LEDSwitchON(void){
+	GPIOA->BSRR |= GPIO_BSRR_BS5;
+}
+
+/**
+  * @brief  This is function for switching OFF the LED on Nucleo board
+  * @param  None
+  * @retval None
+  */
+void LEDSwitchOFF(void){
+	GPIOA->BSRR |= GPIO_BSRR_BR5;
+}
+
+/**
+  * @brief  This function handles SysTick Handler. With current config it should fire at 100Hz rate.
+  * @param  None
+  * @retval None
+  */
+void SysTick_Handler(void)
+{
+	// deal with LED signaling
+	LEDInstanceProcess(&myled);
 }
 
 #ifdef  USE_FULL_ASSERT

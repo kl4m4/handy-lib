@@ -34,8 +34,9 @@ void CustomClockConfigHSI64(void){
 	//  --------- PLL configuration -----------
 	// PLL - select PLL multiplier
 	RCC->CFGR &= ~RCC_CFGR_PLLMULL;
-	// all bits set = multiplier x16
-	RCC->CFGR |= (RCC_CFGR_PLLMULL_0 | RCC_CFGR_PLLMULL_1 | RCC_CFGR_PLLMULL_2 | RCC_CFGR_PLLMULL_3);
+	// 1110 = multiplier x16
+	RCC->CFGR &= RCC_CFGR_PLLMULL;
+	RCC->CFGR |= ( RCC_CFGR_PLLMULL_1 | RCC_CFGR_PLLMULL_2 | RCC_CFGR_PLLMULL_3);
 	// PLL - select PLL source
 	// bit cleared = HSI/2 set as input
 	RCC->CFGR &= ~RCC_CFGR_PLLSRC;
@@ -69,6 +70,20 @@ void CustomClockConfigHSI64(void){
 
 	// update SystemCoreClock variable
 	SystemCoreClockUpdate();
+
+	//  -------------------------------------------------------------
+	//  ------------------ SysTick configuration --------------------
+	//  -------------------------------------------------------------
+
+	//  -------- SYSCLK -> AHBpresc -> /8 -> SysTick
+	//  -------- 64MHz -> /1 -> /8 = 16MHz
+	//  -------- to get 100Hz, need to divide /160000
+	//SysTick->LOAD = 160000;
+	//  -------- Weird stuff! Actually need to divide /80000 to get 100Hz SysTick
+	SysTick->LOAD = 80000;
+
+	//  -------- activate SysTick interrupt generation, and counter itself
+	SysTick->CTRL |= (SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk);
 }
 
 /**
@@ -83,19 +98,33 @@ void CustomGPIOConfig(void){
 
 	//  --------- Clock for GPIO port C (APB2) -----------
 	RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+	//  --------- Clock for GPIO port A (APB2) -----------
+	RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+
 
 	//  --------- PC13 Pin mode - both bits cleared - input mode -----------
 	GPIOC->CRH &= ~GPIO_CRH_MODE13;
 	//  --------- PC0 Pin mode - both bits set - output mode 50MHz -----------
-	GPIOC->CRH |= GPIO_CRL_MODE0;
+	GPIOC->CRL |= GPIO_CRL_MODE0;
+	//  --------- PA5 Pin mode - both bits set - output mode 50MHz -----------
+	// ---------- Comment this when using SPI1 -------------------------------
+	GPIOA->CRL |= GPIO_CRL_MODE5;
 
 	//  -------------- PC13 Pin config - 01 - floating input ---------------
 	GPIOC->CRH &= ~GPIO_CRH_CNF13;
 	GPIOC->CRH |= GPIO_CRH_CNF13_0;
 	//  -------------- PC0 Pin config - 00 - push-pull output ---------------
-	GPIOC->CRH &= ~GPIO_CRL_CNF0;
+	GPIOC->CRL &= ~GPIO_CRL_CNF0;
 	//  ------------- Immidiately set to high -----------------
 	GPIOC->BSRR |= GPIO_BSRR_BS0;
+
+	//  -------------- PA5 Pin config - 00 - push-pull output ---------------
+	//  -------------- Comment it when using SPI1!
+	GPIOA->CRL &= ~GPIO_CRL_CNF5;
+	//  ------------- Immidiately set to low -----------------
+	GPIOA->BSRR |= GPIO_BSRR_BR5;
+
+
 
 	//  -------------------------------------------------------------
 	//  ---------------- AFIO for interrupt config ------------------
